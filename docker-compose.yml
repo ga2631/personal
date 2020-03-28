@@ -1,0 +1,44 @@
+version: "3"
+services: 
+    mysql:
+        image: mysql:8.0.19
+        restart: always
+        ports:
+            - ${MYSQL_PORT}:${MYSQL_PORT}
+        environment: 
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+    server:
+        depends_on: ["mysql"]
+        build: ./server/Dockerfile
+        restart: unless-stopped
+        environment:
+            PORT: ${SERVER_PORT}
+        ports: 
+            - ${SERVER_PORT}:${SERVER_PORT}
+        working_dir: /server
+        volumes: 
+            - ./server:/var/www/app/server
+            - /server/node_modules
+        entrypoint: ["yarn", "start"]
+        tty: true
+    client:
+        build: ./client/Dockerfile
+        restart: unless-stopped
+        environment: 
+            PORT: ${CLIENT_PORT}
+        ports: 
+            - ${CLIENT_PORT}:${CLIENT_PORT}
+        working_dir: /client
+        volumes: 
+            - ./client:/client
+        entrypoint: ["yarn", "serve"]
+        links: 
+            - server
+    adminer:
+        image: adminer:4.7.6
+        restart: always
+        ports:
+            - ${ADMINER_PORT}:${ADMINER_PORT}
